@@ -30,13 +30,12 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     """
     # kernel for finding x derivative
     Xkernel = np.array([[1, 0, -1]])
-    # transpose Xkernel for finding y derivative
+    # transpose Xkernel to find y derivative
     Ykernel = np.transpose([Xkernel])
 
     w = win_size // 2
     # normalize pixels
     I1g = im1 / 255.
-    # Implement Lucas Kanade
     # for each point, calculate I_x, I_y, I_t
     fx = cv2.filter2D(im2, -1, Xkernel, borderType=cv2.BORDER_REPLICATE)
     fy = cv2.filter2D(im2, -1, Ykernel, borderType=cv2.BORDER_REPLICATE)
@@ -78,7 +77,18 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     :return: A 3d array, with a shape of (m, n, 2),
     where the first channel holds U, and the second V.
     """
-    pass
+    im1P = gaussianPyr(img1,k)
+    im2P = gaussianPyr(img2,k)
+
+    U,V = opticalFlow(im1P[k-1],im2P[k-1])
+
+    for i in range(k,0,-1):
+        prevU, prevV = opticalFlow(im1P[i],im2P[i],stepSize,winSize)
+        # Ui = Ui + 2 ∗ Ui−1, Vi = Vi + 2 ∗ Vi−1
+        U = U + 2 * prevU
+        V = V + 2 * prevV
+
+    return [U,V,2]
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +102,8 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by LK.
     """
-    pass
+    of,answer = opticalFlow(im1,im2)
+    return answer
 
 
 def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
@@ -173,7 +184,6 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
         answer.append(curr-cv2.blur(curr,(5,5)))
     return answer
 
-
 def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     """
     Restores the original image from a laplacian pyramid
@@ -197,5 +207,25 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     :param levels: Pyramid depth
     :return: (Naive blend, Blended Image)
     """
-    pass
+    # find blended image
+    lapA = laplaceianReduce(img_1,levels)
+    lapB = laplaceianReduce(img_2,levels)
+    gaussPyr = gaussianPyr(mask,levels)
+
+    # create answer array
+    lapC = []
+
+    # for every level in the pyramids
+    for k in range(levels):
+        img = gaussPyr[k]*lapA[k]+(1-gaussPyr[k])*lapB[k]
+        lapC.append(img)
+
+    # Reconstruct all levels to get blended image
+    blended = laplaceianExpand(lapC)
+    blended = np.resize(blended,[679, 1023, 3])
+
+    # find naive blend
+    naive = img_1*mask+img_2*(1-mask)
+
+    return np.array(naive), np.array(blended)
 
