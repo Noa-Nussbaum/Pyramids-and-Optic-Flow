@@ -146,8 +146,8 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    # lkDemo(img_path)
-    hierarchicalkDemo(img_path)
+    lkDemo(img_path)
+    # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
     # imageWarpingDemo(img_path)
