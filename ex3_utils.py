@@ -102,14 +102,29 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     #     U = U + 2 * prevU
     #     V = V + 2 * prevV
 
-    answer = np.zeros((img1[0],img1[1],2))
-    for m in range(k):
-        points, curr = opticalFlow(im1P[k - m], im2P[k - m], stepSize, winSize)
-        for i in points:
-            # U
-            answer[points[i][0]][points[i][1]][0] = curr[points[i][0]][0] + 2 * answer[points[i][0]][points[i][1]][0]
-            # V
-            answer[points[i][0]][points[i][1]][1] = curr[points[i][1]][1] + 2 * answer[points[i][0]][points[i][1]][1]
+    answer = np.zeros((img1.shape[0],img1.shape[1],2))
+    u = np.zeros(img1.shape)
+    v = np.zeros(img1.shape)
+    for m in range(k-1):
+        points, curr = opticalFlow(im1P[k - m-1], im2P[k - m-1], stepSize, winSize)
+        for j in range(points.shape[0]):
+            x = points[j][0]
+            y = points[j][1]
+            u[x][y] += curr[j][0]
+            v[x][y] += curr[j][1]
+
+        u = u * 2
+        v = v * 2
+
+    for i in range(img1.shape[0]):
+        for j in range(img1.shape[1]):
+            answer[i][j][0] = u[i][j]
+            answer[i][j][1] = v[i][j]
+        # for i in points:
+        #     # U
+        #     answer[points[i][0]][points[i][1]][0] = curr[points[i][0]][0] + 2 * answer[points[i][0]][points[i][1]][0]
+        #     # V
+        #     answer[points[i][0]][points[i][1]][1] = curr[points[i][1]][1] + 2 * answer[points[i][0]][points[i][1]][1]
 
     return answer
 
@@ -125,8 +140,8 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by LK.
     """
-    of,answer = opticalFlow(im1,im2)
-    return answer
+
+    pass
 
 
 def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
@@ -165,7 +180,8 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     :return: warp image 2 according to T and display both image1
     and the wrapped version of the image2 in the same figure.
     """
-    pass
+
+    return im1
 
 
 # ---------------------------------------------------------------------------

@@ -33,7 +33,22 @@ def hierarchicalkDemo(img_path):
     :param img_path: Image input
     :return:
     """
-    print("Hierarchical LK Demo")
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
+    t = np.array([[1, 0, -.2],
+                  [0, 1, -.1],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    st = time.time()
+    ans = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), 7, stepSize=20, winSize=5)
+    et = time.time()
+
+    print("Time: {:.4f}".format(et - st))
+    # print(np.median(uv, 0))
+    # print(np.mean(uv, 0))
+
+    # displayOpticalFlow(img_2, pts, uv)
+    print(ans)
 
     pass
 
@@ -46,6 +61,32 @@ def compareLK(img_path):
     :return:
     """
     print("Compare LK & Hierarchical LK")
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
+    t = np.array([[1, 0, -.2],
+                  [0, 1, -.1],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    st = time.time()
+    pts, uv = opticalFlow(img_1.astype(np.float), img_2.astype(np.float), step_size=20, win_size=5)
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
+    print(np.median(uv, 0))
+    print(np.mean(uv, 0))
+
+    displayOpticalFlow(img_2, pts, uv)
+    pyr_ans = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), 7, stepSize=20, winSize=5)
+    pyr_pts = []
+    pyr_uv = []
+    for i in range(pyr_ans.shape[0]):
+        for j in range(pyr_ans.shape[1]):
+            if (pyr_ans[i, j][0] != 0 or pyr_ans[i, j][1] != 0):
+                pyr_pts.append([i, j])
+                pyr_uv.append(pyr_ans[i, j])
+    pyr_pts = np.array(pyr_pts)
+    pyr_uv = np.array(pyr_uv)
+
+    displayOpticalFlow(img_2, pyr_pts, pyr_uv)
 
     pass
 
@@ -69,6 +110,12 @@ def imageWarpingDemo(img_path):
     :return:
     """
     print("Image Warping Demo")
+    img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    warpImages()
+    plt.imshow(img, cmap='gray')
+
+    plt.show()
+
 
     pass
 
@@ -146,8 +193,8 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    lkDemo(img_path)
-    # hierarchicalkDemo(img_path)
+    # lkDemo(img_path)
+    hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
     # imageWarpingDemo(img_path)
