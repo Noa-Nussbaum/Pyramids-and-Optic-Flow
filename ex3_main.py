@@ -40,15 +40,24 @@ def hierarchicalkDemo(img_path):
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     st = time.time()
-    ans = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), 7, stepSize=20, winSize=5)
+    pyr_ans = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), 7, stepSize=20, winSize=5)
     et = time.time()
+    pyr_pts = []
+    pyr_uv = []
+    for i in range(pyr_ans.shape[0]):
+        for j in range(pyr_ans.shape[1]):
+            if (pyr_ans[i, j][0] != 0 or pyr_ans[i, j][1] != 0):
+                pyr_pts.append([i, j])
+                pyr_uv.append(pyr_ans[i, j])
+    pyr_pts = np.array(pyr_pts)
+    pyr_uv = np.array(pyr_uv)
+
+    displayOpticalFlow(img_2, pyr_pts, pyr_uv)
+
 
     print("Time: {:.4f}".format(et - st))
     # print(np.median(uv, 0))
     # print(np.mean(uv, 0))
-
-    # displayOpticalFlow(img_2, pts, uv)
-    print(ans)
 
     pass
 
@@ -110,15 +119,22 @@ def imageWarpingDemo(img_path):
     :return:
     """
     print("Image Warping Demo")
-    img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    warpImages()
-    plt.imshow(img, cmap='gray')
+
+    image = cv2.imread(img_path)
+    height, width = image.shape[:2]
+    center = (width / 2, height / 2)
+    rotate_matrix = cv2.getRotationMatrix2D(center=center, angle=45, scale=1)
+    rotated_image = cv2.warpAffine(src=image, M=rotate_matrix, dsize=(width, height))
+    # cv2.imshow('Original image', image)
+    # cv2.imshow('Rotated image', rotated_image)
+
+    # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+
+    plt.imshow(warpImages(image, rotated_image, rotate_matrix), cmap='gray')
 
     plt.show()
 
-
     pass
-
 
 # ---------------------------------------------------------------------------
 # --------------------- Gaussian and Laplacian Pyramids ---------------------
@@ -194,10 +210,10 @@ def main():
 
     img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
-    hierarchicalkDemo(img_path)
+    # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
-    # imageWarpingDemo(img_path)
+    imageWarpingDemo(img_path)
     #
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')

@@ -91,42 +91,80 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     if (not isgray(img2)):
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
-    im1P = gaussianPyr(img1,k)
-    im2P = gaussianPyr(img2,k)
+    gaussPyr1 = gaussianPyr(img1, k)
+    gaussPyr2 = gaussianPyr(img2, k)
 
-    # points,uv = opticalFlow(im1P[k-1],im2P[k-1],stepSize,winSize)
-
-    # for i in range(k-2,-1,-1):
-    #     prevU, prevV = opticalFlow(im1P[i],im2P[i],stepSize,winSize)
-    #     # Ui = Ui + 2 ∗ Ui−1, Vi = Vi + 2 ∗ Vi−1
-    #     U = U + 2 * prevU
-    #     V = V + 2 * prevV
-
-    answer = np.zeros((img1.shape[0],img1.shape[1],2))
+    height, width = img1.shape
     u = np.zeros(img1.shape)
     v = np.zeros(img1.shape)
-    for m in range(k-1):
-        points, curr = opticalFlow(im1P[k - m-1], im2P[k - m-1], stepSize, winSize)
-        for j in range(points.shape[0]):
-            x = points[j][0]
-            y = points[j][1]
-            u[x][y] += curr[j][0]
-            v[x][y] += curr[j][1]
+    ans_shape = (height, width, 2)
+    ans = np.zeros(ans_shape)
 
+    for i in range(k - 1, 1, -1):
+        pts, UV = opticalFlow(gaussPyr1[i], gaussPyr2[i], stepSize, winSize)
+        for j in range(pts.shape[0]):
+            x = pts[j][0]
+            y = pts[j][1]
+            u[x][y] += UV[j][0]
+            v[x][y] += UV[j][1]
         u = u * 2
         v = v * 2
 
-    for i in range(img1.shape[0]):
-        for j in range(img1.shape[1]):
-            answer[i][j][0] = u[i][j]
-            answer[i][j][1] = v[i][j]
-        # for i in points:
-        #     # U
-        #     answer[points[i][0]][points[i][1]][0] = curr[points[i][0]][0] + 2 * answer[points[i][0]][points[i][1]][0]
-        #     # V
-        #     answer[points[i][0]][points[i][1]][1] = curr[points[i][1]][1] + 2 * answer[points[i][0]][points[i][1]][1]
+    pts, UV = opticalFlow(gaussPyr1[0], gaussPyr2[0], stepSize, winSize)
+    for j in range(pts.shape[0]):
+        if(pts[j][0]<=400):
+            x = pts[j][0]
+        y = pts[j][1]
+        u[x][y] += UV[j][0]
+        v[x][y] += UV[j][1]
+    u = u * 2
+    v = v * 2
 
-    return answer
+    for i in range(height):
+        for j in range(width):
+            ans[i][j][0] = u[i][j]
+            ans[i][j][1] = v[i][j]
+
+    return ans
+
+
+
+    # im1P = gaussianPyr(img1,k)
+    # im2P = gaussianPyr(img2,k)
+    #
+    # # points,uv = opticalFlow(im1P[k-1],im2P[k-1],stepSize,winSize)
+    #
+    # # for i in range(k-2,-1,-1):
+    # #     prevU, prevV = opticalFlow(im1P[i],im2P[i],stepSize,winSize)
+    # #     # Ui = Ui + 2 ∗ Ui−1, Vi = Vi + 2 ∗ Vi−1
+    # #     U = U + 2 * prevU
+    # #     V = V + 2 * prevV
+    #
+    # answer = np.zeros((img1.shape[0],img1.shape[1],2))
+    # u = np.zeros(img1.shape)
+    # v = np.zeros(img1.shape)
+    # for m in range(k-1):
+    #     points, curr = opticalFlow(im1P[k - m-1], im2P[k - m-1], stepSize, winSize)
+    #     for j in range(points.shape[0]):
+    #         x = points[j][0]
+    #         y = points[j][1]
+    #         u[x][y] += curr[j][0]
+    #         v[x][y] += curr[j][1]
+    #
+    #     u = u * 2
+    #     v = v * 2
+    #
+    # for i in range(img1.shape[0]):
+    #     for j in range(img1.shape[1]):
+    #         answer[i][j][0] = u[i][j]
+    #         answer[i][j][1] = v[i][j]
+    #     # for i in points:
+    #     #     # U
+    #     #     answer[points[i][0]][points[i][1]][0] = curr[points[i][0]][0] + 2 * answer[points[i][0]][points[i][1]][0]
+    #     #     # V
+    #     #     answer[points[i][0]][points[i][1]][1] = curr[points[i][1]][1] + 2 * answer[points[i][0]][points[i][1]][1]
+    #
+    # return answer
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +179,36 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :return: Translation matrix by LK.
     """
 
-    pass
+    t = [[1, 0, 0],
+         [0, 1, 0],
+         [0, 0, 1]]
+    feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
+    good_features = cv2.goodFeaturesToTrack(im1, mask=None, **feature_params)
+    im1 = im1.astype('uint8')
+    im2 = im2.astype('uint8')
+    cv_lk_pyr = cv2.calcOpticalFlowPyrLK(im1, im2, good_features, None)[0]
+    directions = cv_lk_pyr - good_features
+    curr_mse = np.inf
+    # go over all direction in for loop from lk (built in one?)
+    # add u and v to unit matrix
+    for i in range(len(directions)):
+        u = directions[i, 0, 0]
+        v = directions[i, 0, 1]
+        t[0][2] = u
+        t[1][2] = v
+        # warp img 1, t,im1.shape[::-1]
+        img_2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
+        mse = np.square(im1 - img_2).mean()
+        if mse < curr_mse:
+            best = img_2
+            curr_mse = mse
+
+    # calculate mse
+    mse = np.square(im1-best).mean()
+
+    print("MSE: ",mse)
+
+    return best
 
 
 def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
@@ -150,7 +217,42 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by LK.
     """
-    pass
+
+    feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
+    good_features = cv2.goodFeaturesToTrack(im1, mask=None, **feature_params)
+    im1 = im1.astype('uint8')
+    im2 = im2.astype('uint8')
+    cv_lk_pyr = cv2.calcOpticalFlowPyrLK(im1, im2, good_features, None)[0]
+    directions = cv_lk_pyr - good_features
+    curr_mse = np.inf
+
+    # go over directions in u,v
+    for i in range(len(directions)):
+        u = directions[i, 0, 0]
+        v = directions[i, 0, 1]
+        # find angle
+        if u==0:
+            angle = 0
+        else:
+            angle = np.arctan(v/u)
+        # create matrix
+        matrix = np.array([[np.cos(angle), -np.sin(angle),0],
+                           [np.sin(angle),np.cos(angle),0],
+                          [0,0,1]],dtype = float)
+        # warp
+        img_2 = cv2.warpPerspective(im1, matrix, im1.shape[::-1])
+        # calculate mse, keep image that gives best result
+        mse = np.square(im1 - img_2).mean()
+        if mse < curr_mse:
+            best = img_2
+            curr_mse = mse
+    # find lk translation for image we kept and img2
+    translated = findTranslationLK(best,im2)
+
+    # the answer is the translation @ rotation
+    answer = translated @ img_2
+
+    return answer
 
 
 def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
@@ -159,6 +261,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by correlation.
     """
+
     pass
 
 
@@ -181,7 +284,21 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     and the wrapped version of the image2 in the same figure.
     """
 
-    return im1
+    inverse = np.linalg.inv(T)
+    answer = np.zeros_like(im1)
+
+    for i in range(im2.shape[0]):
+        for j in range(im2.shape[1]):
+            a = np.array([i, j, 1])
+            b = a.dot(inverse)
+            x = int(b[0])
+            y = int(b[1])
+            if 0<=x<im1.shape[0] and 0<=y<im1.shape[1]:
+                answer[i][j]=im1[x][y]
+
+    mse = np.square(im1 - answer).mean()
+    print("MSE: ",mse)
+    return answer
 
 
 # ---------------------------------------------------------------------------
