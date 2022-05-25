@@ -124,39 +124,19 @@ def imageWarpingDemo(img_path):
     """
     print("Image Warping Demo")
 
-    image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    # height, width = image.shape[:2]
-    # center = (width / 2, height / 2)
-    #
-    # rotate_matrix = cv2.getRotationMatrix2D(center=center, angle=45, scale=1)
-    # rotated_image = cv2.warpAffine(src=image, M=rotate_matrix, dsize=(width, height))
-    # t = np.array([[.2,.3,.4],[.1,.2,.3],[.5,.6,.7]], dtype=float)
-    #
-    #
-    # cv2.imshow('Original image', image)
-    # cv2.imshow('Rotated image', rotated_image)
-    #
-    # # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    #
-    # plt.imshow(warpImages(image, rotated_image, t), cmap='gray')
-    #
-    plt.imshow(image, cmap='gray')
-    plt.show()
-    #
-    # # translation test
-    # image = cv2.imread(img_path)
-    # # image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    #
-    # height, width = image.shape[:2]
-    # tx, ty = width / 4, height / 4
-    # translation_matrix = np.array([[1, 0, tx], [0, 1, ty]], dtype=np.float32)
-    # translated_image = cv2.warpAffine(src=image, M=translation_matrix, dsize=(width, height))
-    #
-    # cv2.imshow('Original image', image)
-    # cv2.imshow('Rotated image', translated_image)
-    # cv2.waitKey(0)
-    # print(findTranslationLK(image, translated_image))
+    image1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    t = np.array([[1,0,120],
+                  [0,1,-30],
+                  [0,0,1]],dtype=float)
 
+    image2 = cv2.warpPerspective(image1, t, image1.shape[::-1])
+
+    plt.imshow(image1, cmap='gray')
+    plt.imshow(image2, cmap='gray')
+
+    img = warpImages(image1,image2,t)
+    plt.imshow(img, cmap='gray')
+    plt.show()
 
     pass
 
@@ -233,13 +213,13 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    lkDemo(img_path)
-    hierarchicalkDemo(img_path)
-    compareLK(img_path)
+    # lkDemo(img_path)
+    # hierarchicalkDemo(img_path)
+    # compareLK(img_path)
     imageWarpingDemo(img_path)
-    pyrGaussianDemo('input/pyr_bit.jpg')
-    pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    # pyrGaussianDemo('input/pyr_bit.jpg')
+    # pyrLaplacianDemo('input/pyr_bit.jpg')
+    # blendDemo()
 
 
 if __name__ == '__main__':

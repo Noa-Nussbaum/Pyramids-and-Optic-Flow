@@ -264,7 +264,7 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     for i in range(im2.shape[0]):
         for j in range(im2.shape[1]):
             a = np.array([i, j, 1])
-            b = a.dot(inverse)
+            b = inverse.dot(a)
             x = int(b[0])
             y = int(b[1])
             if 0<=x<im1.shape[0] and 0<=y<im1.shape[1]:
