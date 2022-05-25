@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+import numpy as np
 from ex3_utils import *
 import time
 
@@ -38,26 +40,27 @@ def hierarchicalkDemo(img_path):
     t = np.array([[1, 0, -.2],
                   [0, 1, -.1],
                   [0, 0, 1]], dtype=np.float)
+    # change size
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     st = time.time()
-    pyr_ans = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), 7, stepSize=20, winSize=5)
+
+    # find optical flow
+    pyr = opticalFlowPyrLK(img_1.astype(np.float), img_2.astype(np.float), 7, stepSize=20, winSize=5)
     et = time.time()
-    pyr_pts = []
-    pyr_uv = []
-    for i in range(pyr_ans.shape[0]):
-        for j in range(pyr_ans.shape[1]):
-            if (pyr_ans[i, j][0] != 0 or pyr_ans[i, j][1] != 0):
-                pyr_pts.append([i, j])
-                pyr_uv.append(pyr_ans[i, j])
-    pyr_pts = np.array(pyr_pts)
-    pyr_uv = np.array(pyr_uv)
+    pyr_points = []
+    uv = []
+    for i in range(pyr.shape[0]):
+        for j in range(pyr.shape[1]):
+            if (pyr[i, j][0] != 0 or pyr[i, j][1] != 0):
+                pyr_points.append([i, j])
+                uv.append(pyr[i, j])
+    pyr_points = np.array(pyr_points)
+    uv = np.array(uv)
 
-    displayOpticalFlow(img_2, pyr_pts, pyr_uv)
-
+    # show results
+    displayOpticalFlow(img_2, pyr_points, uv)
 
     print("Time: {:.4f}".format(et - st))
-    # print(np.median(uv, 0))
-    # print(np.mean(uv, 0))
 
     pass
 
@@ -112,6 +115,7 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 # ---------------------------------------------------------------------------
 
 
+
 def imageWarpingDemo(img_path):
     """
     ADD TEST
@@ -120,19 +124,39 @@ def imageWarpingDemo(img_path):
     """
     print("Image Warping Demo")
 
-    image = cv2.imread(img_path)
-    height, width = image.shape[:2]
-    center = (width / 2, height / 2)
-    rotate_matrix = cv2.getRotationMatrix2D(center=center, angle=45, scale=1)
-    rotated_image = cv2.warpAffine(src=image, M=rotate_matrix, dsize=(width, height))
+    image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    # height, width = image.shape[:2]
+    # center = (width / 2, height / 2)
+    #
+    # rotate_matrix = cv2.getRotationMatrix2D(center=center, angle=45, scale=1)
+    # rotated_image = cv2.warpAffine(src=image, M=rotate_matrix, dsize=(width, height))
+    # t = np.array([[.2,.3,.4],[.1,.2,.3],[.5,.6,.7]], dtype=float)
+    #
+    #
     # cv2.imshow('Original image', image)
     # cv2.imshow('Rotated image', rotated_image)
-
-    # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-
-    plt.imshow(warpImages(image, rotated_image, rotate_matrix), cmap='gray')
-
+    #
+    # # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    #
+    # plt.imshow(warpImages(image, rotated_image, t), cmap='gray')
+    #
+    plt.imshow(image, cmap='gray')
     plt.show()
+    #
+    # # translation test
+    # image = cv2.imread(img_path)
+    # # image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    #
+    # height, width = image.shape[:2]
+    # tx, ty = width / 4, height / 4
+    # translation_matrix = np.array([[1, 0, tx], [0, 1, ty]], dtype=np.float32)
+    # translated_image = cv2.warpAffine(src=image, M=translation_matrix, dsize=(width, height))
+    #
+    # cv2.imshow('Original image', image)
+    # cv2.imshow('Rotated image', translated_image)
+    # cv2.waitKey(0)
+    # print(findTranslationLK(image, translated_image))
+
 
     pass
 
@@ -209,15 +233,13 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    # lkDemo(img_path)
-    # hierarchicalkDemo(img_path)
-    # compareLK(img_path)
-    #
+    lkDemo(img_path)
+    hierarchicalkDemo(img_path)
+    compareLK(img_path)
     imageWarpingDemo(img_path)
-    #
-    # pyrGaussianDemo('input/pyr_bit.jpg')
-    # pyrLaplacianDemo('input/pyr_bit.jpg')
-    # blendDemo()
+    pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrLaplacianDemo('input/pyr_bit.jpg')
+    blendDemo()
 
 
 if __name__ == '__main__':
